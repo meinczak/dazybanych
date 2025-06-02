@@ -1,3 +1,10 @@
+<?php
+if(!isset($_COOKIE['MUserID'])) {
+    header("Location: login.php");
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -23,9 +30,9 @@
                     <div class="logo-ornament">❦</div>
                 </div>
                 <div class="header-buttons">
-                    <button class="vintage-btn logout-btn">
+                     <a href="login.php" class="vintage-btn logout-btn">
                         <span>Depart</span>
-                    </button>
+                    </a>
                 </div>
             </div>
             <div class="ornate-border-bottom"></div>
@@ -38,7 +45,7 @@
         <span class="filter-text">Curate Your Collection</span>
         <span class="decorative-line">━━━━━━━</span>
     </div>
-    <form class="filters" method="get">
+    <form class="filters" method="get" action="index.php">
         <div class="filter-group">
             <label for="search" class="filter-label">Search by Title:</label>
             <input type="text" name="search" id="search" class="vintage-input" placeholder="Enter book title...">
@@ -46,11 +53,18 @@
         <div class="filter-group">
             <label for="genre" class="filter-label">Genre:</label>
             <select name="genre" id="genre" class="vintage-select">
-                <option value="">All Genres</option>
-                <option value="społeczne sci-fi">Fiction</option>
-                <option value="powieść psychologiczna">Psychological</option>
-                <option value="romance">Romance</option>
-                <option value="powieść historyczna">History</option>
+                <option value="default">All Genres</option>
+                <?php
+                $conn = new mysqli('localhost', 'root', '', 'ksiazkimanczak');
+                $sql = "SELECT DISTINCT category FROM books";
+                $result = $conn->query($sql);
+
+                while ($row = $result->fetch_assoc()) {
+                    echo "<option>".$row["category"]."</option>";
+                }
+
+                $conn->close();
+                ?>
             </select>
         </div>
         <div class="filter-group">
@@ -63,15 +77,11 @@
                 <option value="default">Default Order</option>
                 <option value="alphabetical-asc">Alphabetical (A-Z)</option>
                 <option value="alphabetical-desc">Alphabetical (Z-A)</option>
-                <option value="rating-high">Rating (High to Low)</option>
-                <option value="rating-low">Rating (Low to High)</option>
-                <option value="available">Available First</option>
-                <option value="unavailable">Unavailable First</option>
             </select>
         </div>
         <input type="submit" class="vintage-btn filter-btn" value="Apply Filters">
         <input type="reset" class="vintage-btn clear-btn" value="Clear All">
-</form>
+    </form>
 </div>
 
             <div class="books-section">
@@ -83,23 +93,35 @@
                 
                 <div class="books-grid" id="booksGrid">
                     <?php
+                    ini_set('display_errors', 0);
+                    error_reporting(0);
                     $conn = new mysqli('localhost', 'root', '', 'ksiazkimanczak');
                     $search = $_GET["search"];
                     $genre = $_GET["genre"];
                     $author = $_GET["author"];
                     $sortBy = $_GET["sortBy"];
-                    $sql2;
+                    $SQLsort;
+                    $SQLgenre = ""; 
+
+                    $sql2 = "WHERE author LIKE '%".$author."%' AND name LIKE '%".$search."%' ";
                     
                     switch ($sortBy) {
                         case "default":
-                            $sql2 = "";
+                            $SQLsort = "";
                             break;
-                        case "alphabetical-asc";
-                            $sql2 = "ORDER BY";
+                        case "alphabetical-asc":
+                            $SQLsort = "ORDER BY name ASC";
+                            break;
+                        case "alphabetical-desc":
+                            $SQLsort = "ORDER BY name DESC";
                             break;
                     }
 
-                    $sql = "SELECT cover, name, author, id, category FROM books". $sql2;
+                    if ($genre != "default" && $genre != "") {
+                        $SQLgenre = "AND category = '".$genre."'";
+                    }
+
+                    $sql = "SELECT cover, name, author, id, category FROM books ". $sql2 . $SQLgenre . $SQLsort;
                     $result = $conn->query($sql);
 
                     while ($row = $result->fetch_assoc()) {
@@ -135,6 +157,7 @@
                                 </div>
                               </div>";
                     }
+                    $conn->close();
                     ?>
                 </div>
             </div>
@@ -142,7 +165,7 @@
 
         <footer class="vintage-footer">
             <div class="footer-ornament">❦ ❦ ❦</div>
-            <p>Preserving Literary Heritage Since Time Immemorial</p>
+            <p>Wykonał Mikołaj Mańczak</p>
             <div class="footer-ornament">❦ ❦ ❦</div>
         </footer>
     </div>
